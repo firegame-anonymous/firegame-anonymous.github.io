@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="FireGame learns implicit state transitions for game world models. Explore synchronized gameplay comparisons, evaluation protocols, and ablation results.">
+  <meta name="theme-color" content="#141010">
+  <title>FireGame | Learning Implicit State Transitions for Game World Models</title>
+  <link rel="icon" href="media/favicon.png" type="image/png">
+  <link rel="stylesheet" href="fonts/typefaces.css">
+  <link rel="stylesheet" href="style.css?v=7">
+  <script src="playback.js?v=5" defer></script>
+  <script src="charts.js?v=3" defer></script>
+</head>
+<body>
+  <div class="viewport-backdrop" aria-hidden="true">
+    <video class="backdrop-video" muted playsinline loop preload="none" poster="media/hero.webp" data-src="media/hero.mp4"></video>
+  </div>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="wordmark" href="#top"><span aria-hidden="true">◈</span> FireGame</a>
+      <nav aria-label="Page sections">
+        <a href="#overview">Overview</a>
+        <a href="#comparisons">Videos</a>
+        <a href="#benchmarks">Evaluation</a>
+        <a href="#ablations">Ablations</a>
+      </nav>
+      <button class="backdrop-toggle" type="button" aria-label="Pause background video" hidden>Ⅱ</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="title">
+      <div class="hero-content wrap">
+        <p class="byline">CVPR 2027 · <em>Anonymous submission</em></p>
+        <h1 id="title"><span>FireGame</span>Learning Implicit State Transitions<br class="desktop-break"> for Game World Models</h1>
+        <p class="hero-summary">An action-conditioned game world model that learns how game states evolve from gameplay video and uses them to generate mechanics-consistent gameplay.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#comparisons">Watch comparisons</a>
+          <a class="button secondary" href="#benchmarks">Review evaluation</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="text-band" id="overview" aria-labelledby="overview-title">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 id="overview-title">How game states evolve</h2>
+          <p>In fighting games, the same input can have different effects depending on the current state. A special attack may fail, and a round must end when a fighter’s health reaches zero. FireGame learns these state changes from gameplay video and uses them to guide generation.</p>
+        </div>
+        <figure class="method-figure">
+          <img src="media/framework.webp?v=2" alt="FireGame framework with self-supervised transition learning, transition-supervised implicit state modeling, and progressive mechanics-aware reinforcement learning" loading="lazy" width="2400" height="1375">
+          <figcaption>FireGame framework (Figure 2).</figcaption>
+        </figure>
+        <div class="method-grid">
+          <div><h3>Learn transition codes</h3><p>The <strong>Game Transition Tokenizer (GTT)</strong> learns discrete codes by reconstructing changes between consecutive frames. A frozen GTT provides targets for transition prediction.</p></div>
+          <div><h3>Predict states under actions</h3><p>The model initializes its latent state from the first frame and rolls it forward under player actions. <strong>State-Guided Cross-Attention (SGCA)</strong> lets the video diffusion model attend to that state sequence.</p></div>
+          <div><h3>Refine mechanics and visuals</h3><p><strong>Stage 1</strong> updates the latent transition model and SGCA using the mechanics reward, with the video backbone frozen. <strong>Stage 2</strong> freezes those modules and refines the video backbone using both rewards.</p></div>
+        </div>
+        <details class="method-details">
+          <summary>Reward model and rollout filtering</summary>
+          <div class="detail-body">
+            <p>The reward model learns from 24,000 generated clips across 6,000 conditioning groups. It assigns separate scores for mechanics fidelity, such as skill legality and health changes, and for visual quality, such as temporal coherence. Stage 2 weights these scores by 0.6 and 0.4, respectively.</p>
+            <p>Both stages retain a group only if its best mechanics score is at least 50 out of 100 and the gap between its best and worst mechanics scores is at least one point. The filtering ablation below measures the effect of removing this step.</p>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <section class="wrap comparison-section" id="comparisons" aria-labelledby="comparison-title">
+      <div class="section-heading">
+        <h2 id="comparison-title">Qualitative Comparisons</h2>
+        <p>The gallery includes the two cases from Figure 4 and three additional comparisons. Each comparison uses a shared initial frame, player actions, and opponent instructions.</p>
+      </div>
+
+      <article class="case" id="streetbench" aria-labelledby="streetbench-title">
+        <div class="case-description">
+          <div><p class="game-name">Street Fighter III: New Generation</p><h3 id="streetbench-title">StreetBench <span>Result Win</span></h3></div>
+          <p>Watch the opponent’s health bar and the timer after the knockout. FireGame keeps the health bar empty and the timer fixed, then displays <q>YOU WIN</q>. StatePlay displays <q>YOU LOSE</q>, while other baselines continue the fight.</p>
+        </div>
+        <div class="moments" aria-label="Key moments" hidden>
+          <button type="button" data-time="0.75">Knockout <span>0.75 s</span></button>
+          <button type="button" data-time="4.50">Winner announced <span>4.50 s</span></button>
+        </div>
+        <div class="video-grid">
+          <figure class="featured reference">
+            <video controls muted playsinline preload="none" poster="media/streetbench-gt.webp" src="media/streetbench-gt.mp4" aria-label="StreetBench Ground Truth"></video>
+            <figcaption>Ground Truth</figcaption>
+          </figure>
+          <figure class="featured ours">
+            <video controls muted playsinline preload="none" poster="media/streetbench-firegame.webp" src="media/streetbench-firegame.mp4" aria-label="StreetBench FireGame"></video>
+            <figcaption>FireGame <span>Ours</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/streetbench-stateplay.webp" src="media/streetbench-stateplay.mp4" aria-label="StreetBench StatePlay"></video>
+            <figcaption>StatePlay</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/streetbench-reactivegwm.webp" src="media/streetbench-reactivegwm.mp4" aria-label="StreetBench ReactiveGWM"></video>
+            <figcaption>ReactiveGWM <span>Zero-shot</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/streetbench-dreamx.webp" src="media/streetbench-dreamx.mp4" aria-label="StreetBench DreamX-World"></video>
+            <figcaption>DreamX-World</figcaption>
+          </figure>
+        </div>
+        <p class="case-note">At the end of the clip, the reference and FireGame both signal a win. The fighters’ gestures and the exact positions after the knockout differ.</p>
+      </article>
+
+      <article class="case" id="fightbench" aria-labelledby="fightbench-title">
+        <div class="case-description">
+          <div><p class="game-name">The King of Fighters ’98</p><h3 id="fightbench-title">FightBench <span>Macro Fail</span></h3></div>
+          <p>Watch the opponent’s health during the special attack. In both the reference and FireGame videos, the move starts without damaging the opponent, who counters and damages the player.</p>
+        </div>
+        <div class="moments" aria-label="Key moments" hidden>
+          <button type="button" data-time="0.30">Super activation <span>0.30 s</span></button>
+          <button type="button" data-time="0.80">Super interrupted <span>0.80 s</span></button>
+        </div>
+        <div class="video-grid">
+          <figure class="featured reference">
+            <video controls muted playsinline preload="none" poster="media/fightbench-gt.webp" src="media/fightbench-gt.mp4" aria-label="FightBench Ground Truth"></video>
+            <figcaption>Ground Truth</figcaption>
+          </figure>
+          <figure class="featured ours">
+            <video controls muted playsinline preload="none" poster="media/fightbench-firegame.webp" src="media/fightbench-firegame.mp4" aria-label="FightBench FireGame"></video>
+            <figcaption>FireGame <span>Ours</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fightbench-stateplay.webp" src="media/fightbench-stateplay.mp4" aria-label="FightBench StatePlay"></video>
+            <figcaption>StatePlay</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fightbench-reactivegwm.webp" src="media/fightbench-reactivegwm.mp4" aria-label="FightBench ReactiveGWM"></video>
+            <figcaption>ReactiveGWM <span>Zero-shot</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fightbench-dreamx.webp" src="media/fightbench-dreamx.mp4" aria-label="FightBench DreamX-World"></video>
+            <figcaption>DreamX-World</figcaption>
+          </figure>
+        </div>
+        <p class="case-note">The reference shows a two-hit sequence and FireGame displays three hits. The generated clip preserves the failed special and counterattack, with a different hit count.</p>
+      </article>
+
+      <article class="case" id="streetbench-result-lose" aria-labelledby="streetbench-result-lose-title">
+        <div class="case-description">
+          <div><p class="game-name">Street Fighter III: New Generation</p><h3 id="streetbench-result-lose-title">StreetBench <span>Result Lose · <strong>Additional case</strong></span></h3></div>
+          <div class="case-inline-controls"></div>
+        </div>
+        <div class="video-grid">
+          <figure class="featured reference">
+            <video controls muted playsinline preload="none" poster="media/street-lose-gt.webp" src="media/street-lose-gt.mp4" aria-label="StreetBench Result Lose Ground Truth"></video>
+            <figcaption>Ground Truth</figcaption>
+          </figure>
+          <figure class="featured ours">
+            <video controls muted playsinline preload="none" poster="media/street-lose-firegame.webp" src="media/street-lose-firegame.mp4" aria-label="StreetBench Result Lose FireGame"></video>
+            <figcaption>FireGame <span>Ours</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-lose-stateplay.webp" src="media/street-lose-stateplay.mp4" aria-label="StreetBench Result Lose StatePlay"></video>
+            <figcaption>StatePlay</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-lose-reactivegwm.webp" src="media/street-lose-reactivegwm.mp4" aria-label="StreetBench Result Lose ReactiveGWM"></video>
+            <figcaption>ReactiveGWM <span>Zero-shot</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-lose-dreamx.webp" src="media/street-lose-dreamx.mp4" aria-label="StreetBench Result Lose DreamX-World"></video>
+            <figcaption>DreamX-World</figcaption>
+          </figure>
+        </div>
+      </article>
+
+      <article class="case" id="streetbench-macro-success" aria-labelledby="streetbench-macro-success-title">
+        <div class="case-description">
+          <div><p class="game-name">Street Fighter III: New Generation</p><h3 id="streetbench-macro-success-title">StreetBench <span>Macro Success · <strong>Additional case</strong></span></h3></div>
+          <div class="case-inline-controls"></div>
+        </div>
+        <div class="video-grid">
+          <figure class="featured reference">
+            <video controls muted playsinline preload="none" poster="media/street-macro-gt.webp" src="media/street-macro-gt.mp4" aria-label="StreetBench Macro Success Ground Truth"></video>
+            <figcaption>Ground Truth</figcaption>
+          </figure>
+          <figure class="featured ours">
+            <video controls muted playsinline preload="none" poster="media/street-macro-firegame.webp" src="media/street-macro-firegame.mp4" aria-label="StreetBench Macro Success FireGame"></video>
+            <figcaption>FireGame <span>Ours</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-macro-stateplay.webp" src="media/street-macro-stateplay.mp4" aria-label="StreetBench Macro Success StatePlay"></video>
+            <figcaption>StatePlay</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-macro-reactivegwm.webp" src="media/street-macro-reactivegwm.mp4" aria-label="StreetBench Macro Success ReactiveGWM"></video>
+            <figcaption>ReactiveGWM</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/street-macro-dreamx.webp" src="media/street-macro-dreamx.mp4" aria-label="StreetBench Macro Success DreamX-World"></video>
+            <figcaption>DreamX-World</figcaption>
+          </figure>
+        </div>
+      </article>
+
+      <article class="case" id="fightbench-macro-fail-extra" aria-labelledby="fightbench-macro-fail-extra-title">
+        <div class="case-description">
+          <div><p class="game-name">The King of Fighters ’98</p><h3 id="fightbench-macro-fail-extra-title">FightBench <span>Macro Fail · <strong>Additional case</strong></span></h3></div>
+          <div class="case-inline-controls"></div>
+        </div>
+        <div class="video-grid">
+          <figure class="featured reference">
+            <video controls muted playsinline preload="none" poster="media/fight-macro-gt.webp" src="media/fight-macro-gt.mp4" aria-label="FightBench Macro Fail · Additional case Ground Truth"></video>
+            <figcaption>Ground Truth</figcaption>
+          </figure>
+          <figure class="featured ours">
+            <video controls muted playsinline preload="none" poster="media/fight-macro-firegame.webp" src="media/fight-macro-firegame.mp4" aria-label="FightBench Macro Fail · Additional case FireGame"></video>
+            <figcaption>FireGame <span>Ours</span></figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fight-macro-stateplay.webp" src="media/fight-macro-stateplay.mp4" aria-label="FightBench Macro Fail · Additional case StatePlay"></video>
+            <figcaption>StatePlay</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fight-macro-reactivegwm.webp" src="media/fight-macro-reactivegwm.mp4" aria-label="FightBench Macro Fail · Additional case ReactiveGWM"></video>
+            <figcaption>ReactiveGWM</figcaption>
+          </figure>
+          <figure class="baseline">
+            <video controls muted playsinline preload="none" poster="media/fight-macro-dreamx.webp" src="media/fight-macro-dreamx.mp4" aria-label="FightBench Macro Fail · Additional case DreamX-World"></video>
+            <figcaption>DreamX-World</figcaption>
+          </figure>
+        </div>
+      </article>
+
+      <template id="playback-controls">
+        <div class="playback-controls">
+          <button type="button" class="play"><span aria-hidden="true">▶</span> Play all</button>
+          <button type="button" class="restart" aria-label="Restart all videos" title="Restart all videos">↺</button>
+          <input class="timeline" type="range" min="0" max="5" step="0.05" value="0" aria-label="Shared video timeline">
+          <output class="time">0.00 / 5.00 s</output>
+          <label class="speed-label"><span class="sr-only">Playback speed</span><select class="speed"><option value="1">1×</option><option value="0.5">0.5×</option><option value="0.25">0.25×</option></select></label>
+        </div>
+        <p class="player-status" role="status" hidden></p>
+      </template>
+    </section>
+
+    <section class="text-band" id="benchmarks" aria-labelledby="benchmarks-title">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 id="benchmarks-title">Evaluation protocol</h2>
+          <p>StreetBench uses Street Fighter III: New Generation, and FightBench uses The King of Fighters ’98. Each mechanics test set has 100 five-second clips at 20 FPS. The test sets are held out from world model and reward model training.</p>
+        </div>
+        <div class="benchmark-layout">
+          <div class="scenario-box">
+            <h3>Mechanics scenarios per benchmark</h3>
+            <div class="scenario-bar" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            <dl class="scenario-counts">
+              <div><dt>Normal</dt><dd>60</dd></div>
+              <div><dt>Macro Success</dt><dd>10</dd></div>
+              <div><dt>Macro Fail</dt><dd>10</dd></div>
+              <div><dt>Result Win</dt><dd>10</dd></div>
+              <div><dt>Result Lose</dt><dd>10</dd></div>
+            </dl>
+            <p>Macro Fail is game-specific. In StreetBench, a super input is issued with insufficient meter and the move fails to start. In FightBench, the super executes but misses.</p>
+          </div>
+          <dl class="protocol-list">
+            <div><dt>Mechanics fidelity</dt><dd>Gemini-3.8-flash and GPT-6.1-sol classify each clip into one of the five scenarios. We report classification accuracy over three runs for each judge.</dd></div>
+            <div><dt>Recorded-State Visual Agreement (RVSA)</dt><dd>A frozen game-specific HUD reader extracts both fighters’ health and energy, plus the timer. The score compares their trajectories with the recorded game states.</dd></div>
+            <div><dt>Visual quality and action control</dt><dd>SSIM and LPIPS compare generated frames with the reference. Move-Acc and Att-Acc use separate single-action test sets of 100 clips each per game.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap comparison-section" id="results" aria-labelledby="results-title">
+      <div class="section-heading">
+        <h2 id="results-title">Benchmark results</h2>
+        <p>FireGame achieves 89.0% and 89.3% mechanics fidelity on StreetBench, and 99.7% under both judges on FightBench. Fine-tuned ReactiveGWM has the highest movement accuracy on both benchmarks.</p>
+      </div>
+      <div class="metric-chart" data-chart="benchmarks" role="group" aria-label="Benchmark score differences" hidden></div>
+      <details class="result-panel">
+        <summary>StreetBench results table</summary>
+        <div class="results-scroll" role="region" aria-label="StreetBench results table" tabindex="0">
+          <table id="street-results" class="results wide-results" aria-label="StreetBench results">
+            <thead><tr><th rowspan="2" scope="col">Method</th><th colspan="2" scope="colgroup">Visual quality</th><th colspan="2" scope="colgroup">Action control</th><th rowspan="2" scope="col">RVSA ↑</th><th colspan="2" scope="colgroup">Mechanics fidelity (%)</th></tr><tr><th scope="col">SSIM ↑</th><th scope="col">LPIPS ↓</th><th scope="col">Move-Acc ↑</th><th scope="col">Att-Acc ↑</th><th scope="col">Gemini ↑</th><th scope="col">GPT ↑</th></tr></thead>
+            <tbody>
+              <tr class="table-group"><th colspan="8" scope="rowgroup">Zero-shot</th></tr>
+              <tr><th scope="row">Matrix-Game 3.0</th><td>0.495</td><td>0.324</td><td>—</td><td>—</td><td>93.150</td><td>70.0±0.0</td><td>63.3±1.2</td></tr>
+              <tr><th scope="row">LingBot-World</th><td>0.251</td><td>0.463</td><td>—</td><td>—</td><td>82.208</td><td>70.7±0.6</td><td>68.3±1.5</td></tr>
+              <tr><th scope="row">LingBot-World 2.0</th><td>0.275</td><td>0.451</td><td>—</td><td>—</td><td>35.491</td><td>69.0±0.0</td><td>70.0±0.0</td></tr>
+              <tr><th scope="row">Worldplay</th><td>0.139</td><td>0.580</td><td>—</td><td>—</td><td>32.276</td><td>70.0±0.0</td><td>68.3±0.6</td></tr>
+              <tr><th scope="row">ReactiveGWM</th><td>0.542</td><td>0.301</td><td>—</td><td>—</td><td>93.974</td><td>70.0±0.0</td><td>70.7±2.3</td></tr>
+              <tr><th scope="row">DreamX-World</th><td>0.193</td><td>0.503</td><td>—</td><td>—</td><td>53.845</td><td>66.3±0.6</td><td>68.7±0.6</td></tr>
+            </tbody>
+            <tbody>
+              <tr class="table-group"><th colspan="8" scope="rowgroup">Fine-tuned</th></tr>
+              <tr><th scope="row">Matrix-Game 3.0</th><td>0.245</td><td>0.523</td><td>50</td><td>15</td><td>88.143</td><td>70.0±2.0</td><td>65.0±2.0</td></tr>
+              <tr><th scope="row">Worldplay</th><td>0.197</td><td>0.357</td><td>56</td><td>12</td><td>75.044</td><td>70.0±0.0</td><td>70.0±0.0</td></tr>
+              <tr><th scope="row">ReactiveGWM</th><td>0.476</td><td>0.361</td><td>88</td><td>40</td><td>94.174</td><td>74.3±0.6</td><td>75.3±1.5</td></tr>
+              <tr><th scope="row">StatePlay</th><td>0.402</td><td>0.408</td><td>61</td><td>72</td><td>93.384</td><td>72.0±0.0</td><td>71.3±1.5</td></tr>
+              <tr><th scope="row">DreamX-World</th><td>0.326</td><td>0.460</td><td>56</td><td>47</td><td>93.027</td><td>79.7±0.6</td><td>69.0±1.0</td></tr>
+              <tr class="ours-row"><th scope="row">FireGame</th><td>0.604</td><td>0.252</td><td>72</td><td>76</td><td>96.502</td><td>89.0±0.0</td><td>89.3±0.6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <details class="result-panel">
+        <summary>FightBench results table</summary>
+        <div class="results-scroll" role="region" aria-label="FightBench results table" tabindex="0">
+          <table id="fight-results" class="results wide-results" aria-label="FightBench results">
+            <thead><tr><th rowspan="2" scope="col">Method</th><th colspan="2" scope="colgroup">Visual quality</th><th colspan="2" scope="colgroup">Action control</th><th rowspan="2" scope="col">RVSA ↑</th><th colspan="2" scope="colgroup">Mechanics fidelity (%)</th></tr><tr><th scope="col">SSIM ↑</th><th scope="col">LPIPS ↓</th><th scope="col">Move-Acc ↑</th><th scope="col">Att-Acc ↑</th><th scope="col">Gemini ↑</th><th scope="col">GPT ↑</th></tr></thead>
+            <tbody>
+              <tr class="table-group"><th colspan="8" scope="rowgroup">Zero-shot</th></tr>
+              <tr><th scope="row">Matrix-Game 3.0</th><td>0.244</td><td>0.527</td><td>—</td><td>—</td><td>95.331</td><td>59.7±2.3</td><td>57.3±1.5</td></tr>
+              <tr><th scope="row">LingBot-World</th><td>0.184</td><td>0.545</td><td>—</td><td>—</td><td>92.498</td><td>67.0±1.0</td><td>64.3±0.6</td></tr>
+              <tr><th scope="row">LingBot-World 2.0</th><td>0.172</td><td>0.615</td><td>—</td><td>—</td><td>83.256</td><td>63.3±1.2</td><td>65.3±1.2</td></tr>
+              <tr><th scope="row">Worldplay</th><td>0.141</td><td>0.599</td><td>—</td><td>—</td><td>73.382</td><td>60.0±0.0</td><td>60.0±0.0</td></tr>
+              <tr><th scope="row">ReactiveGWM</th><td>0.124</td><td>0.717</td><td>—</td><td>—</td><td>38.894</td><td>60.0±0.0</td><td>60.0±0.0</td></tr>
+              <tr><th scope="row">DreamX-World</th><td>0.187</td><td>0.548</td><td>—</td><td>—</td><td>87.725</td><td>61.0±0.0</td><td>63.7±0.6</td></tr>
+            </tbody>
+            <tbody>
+              <tr class="table-group"><th colspan="8" scope="rowgroup">Fine-tuned</th></tr>
+              <tr><th scope="row">Matrix-Game 3.0</th><td>0.259</td><td>0.544</td><td>39</td><td>5</td><td>93.406</td><td>60.0±1.0</td><td>60.0±1.7</td></tr>
+              <tr><th scope="row">Worldplay</th><td>0.128</td><td>0.501</td><td>54</td><td>12</td><td>79.933</td><td>60.0±0.0</td><td>61.3±1.2</td></tr>
+              <tr><th scope="row">ReactiveGWM</th><td>0.313</td><td>0.456</td><td>97</td><td>44</td><td>95.735</td><td>74.0±1.0</td><td>77.0±0.0</td></tr>
+              <tr><th scope="row">StatePlay</th><td>0.333</td><td>0.447</td><td>63</td><td>50</td><td>96.024</td><td>87.7±1.2</td><td>84.3±2.1</td></tr>
+              <tr><th scope="row">DreamX-World</th><td>0.338</td><td>0.442</td><td>59</td><td>82</td><td>95.472</td><td>85.0±0.0</td><td>88.0±0.0</td></tr>
+              <tr class="ours-row"><th scope="row">FireGame</th><td>0.370</td><td>0.410</td><td>74</td><td>93</td><td>96.580</td><td>99.7±0.6</td><td>99.7±0.6</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+      <p class="result-note">Mechanics fidelity is the mean ± standard deviation across three evaluation runs. Move-Acc and Att-Acc are percentages. Dashes indicate that action accuracy was not reported for zero-shot models.</p>
+    </section>
+
+    <section class="text-band" id="ablations" aria-labelledby="ablations-title">
+      <div class="wrap">
+        <div class="section-heading">
+          <h2 id="ablations-title">Ablation studies</h2>
+          <p>Adding the transition tokenizer improves both judges’ mechanics scores on both benchmarks. Progressive reinforcement learning raises them further. On StreetBench, removing mechanics-aware filtering reduces SSIM from 0.604 to 0.544.</p>
+        </div>
+        <div class="ablation-group">
+          <h3>Transition learning and reinforcement learning</h3>
+          <div class="metric-chart" data-chart="components" role="group" aria-label="Component ablation score differences" hidden></div>
+          <details class="result-panel">
+          <summary>Component ablation table</summary>
+          <div class="results-scroll" role="region" aria-label="Component ablation table" tabindex="0">
+          <table id="component-results" class="results wide-results" aria-label="Component ablation">
+            <thead><tr><th rowspan="2" scope="col">Method</th><th colspan="3" scope="colgroup">StreetBench</th><th colspan="3" scope="colgroup">FightBench</th></tr><tr><th scope="col">SSIM ↑</th><th scope="col">Gemini ↑</th><th scope="col">GPT ↑</th><th scope="col">SSIM ↑</th><th scope="col">Gemini ↑</th><th scope="col">GPT ↑</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">SFT</th><td>0.355</td><td>81.7±0.6</td><td>81.3±0.6</td><td>0.360</td><td>92.7±4.0</td><td>92.7±2.1</td></tr>
+              <tr><th scope="row">SFT + GTT</th><td>0.547</td><td>86.3±0.6</td><td>87.0±0.0</td><td>0.366</td><td>96.3±0.6</td><td>96.3±2.5</td></tr>
+              <tr class="ours-row"><th scope="row">SFT + GTT + RL (Full)</th><td>0.604</td><td>89.0±0.0</td><td>89.3±0.6</td><td>0.370</td><td>99.7±0.6</td><td>99.7±0.6</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </details>
+        </div>
+        <div class="ablation-group">
+          <h3>Reinforcement learning schedule and filtering</h3>
+          <div class="metric-chart" data-chart="schedule" role="group" aria-label="Reinforcement learning ablation score differences" hidden></div>
+          <details class="result-panel">
+          <summary>Reinforcement learning ablation table</summary>
+          <div class="results-scroll" role="region" aria-label="StreetBench RL ablation table" tabindex="0">
+          <table id="schedule-results" class="results" aria-label="StreetBench RL ablation">
+            <thead><tr><th scope="col">RL strategy</th><th scope="col">SSIM ↑</th><th scope="col">LPIPS ↓</th><th scope="col">Gemini ↑</th><th scope="col">GPT ↑</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Baseline</th><td>0.547</td><td>0.308</td><td>86.3±0.6</td><td>87.0±0.0</td></tr>
+              <tr><th scope="row">State RL</th><td>0.584</td><td>0.272</td><td>88.7±0.6</td><td>89.0±1.0</td></tr>
+              <tr><th scope="row">Video DiT RL</th><td>0.551</td><td>0.271</td><td>87.3±1.5</td><td>87.7±0.6</td></tr>
+              <tr><th scope="row">Joint RL</th><td>0.596</td><td>0.270</td><td>88.3±1.5</td><td>88.3±0.6</td></tr>
+              <tr><th scope="row">Progressive RL (without filtering)</th><td>0.544</td><td>0.312</td><td>87.7±0.6</td><td>87.7±0.6</td></tr>
+              <tr class="ours-row"><th scope="row">Progressive RL (Full)</th><td>0.604</td><td>0.252</td><td>89.0±0.0</td><td>89.3±0.6</td></tr>
+            </tbody>
+          </table>
+        </div>
+        </details>
+        </div>
+        <p class="result-note">SFT denotes supervised fine-tuning without GTT supervision. The RL baseline is SFT + GTT. The RL strategy comparison uses StreetBench.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap footer">
+    <span>FireGame</span>
+    <a href="#top">Back to top</a>
+  </footer>
+</body>
+</html>
